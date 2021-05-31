@@ -1,10 +1,7 @@
-From c8c52512ff48bee578901c381a42f027e79eadf9 Mon Sep 17 00:00:00 2001
-Message-Id: <c8c52512ff48bee578901c381a42f027e79eadf9.1620066716.git.baruch@tkos.co.il>
-In-Reply-To: <40979666b4371012405715ffa61ab5760fcdc6b3.1620066716.git.baruch@tkos.co.il>
-References: <40979666b4371012405715ffa61ab5760fcdc6b3.1620066716.git.baruch@tkos.co.il>
+From f04f464667d46c7147d2f90312a05e2ad8e8b2fa Mon Sep 17 00:00:00 2001
 From: Baruch Siach <baruch@tkos.co.il>
 Date: Mon, 3 May 2021 20:20:29 +0300
-Subject: [PATCH 3/3] Drop _nocache variants of ioremap()
+Subject: [PATCH 3/5] Drop _nocache variants of ioremap()
 
 Recent kernels removed them.
 ---
@@ -13,9 +10,11 @@ Recent kernels removed them.
  hal/gmac_hal_ops/syn/xgmac/syn_if.c | 2 +-
  3 files changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/hal/edma/edma_data_plane.c b/hal/edma/edma_data_plane.c
+index d51c7f0..dae97ce 100644
 --- a/hal/edma/edma_data_plane.c
 +++ b/hal/edma/edma_data_plane.c
-@@ -797,7 +797,7 @@ int edma_init(void)
+@@ -741,7 +741,7 @@ int edma_init(void)
  	/*
  	 * Remap register resource
  	 */
@@ -24,9 +23,11 @@ Recent kernels removed them.
  				resource_size(edma_hw.reg_resource));
  	if (!edma_hw.reg_base) {
  		pr_warn("Unable to remap EDMA register memory.\n");
+diff --git a/hal/gmac_hal_ops/qcom/qcom_if.c b/hal/gmac_hal_ops/qcom/qcom_if.c
+index b9b5968..25eddf9 100644
 --- a/hal/gmac_hal_ops/qcom/qcom_if.c
 +++ b/hal/gmac_hal_ops/qcom/qcom_if.c
-@@ -400,7 +400,7 @@ static void *qcom_init(struct gmac_hal_p
+@@ -400,7 +400,7 @@ static void *qcom_init(struct gmac_hal_platform_data *gmacpdata)
  	qhd->nghd.mac_id = gmacpdata->macid;
  
  	/* Populate the mac base addresses */
@@ -35,9 +36,11 @@ Recent kernels removed them.
  						res->start, resource_size(res));
  	if (!qhd->nghd.mac_base) {
  		netdev_dbg(ndev, "ioremap fail.\n");
+diff --git a/hal/gmac_hal_ops/syn/xgmac/syn_if.c b/hal/gmac_hal_ops/syn/xgmac/syn_if.c
+index 1ab621a..0d5b9a8 100644
 --- a/hal/gmac_hal_ops/syn/xgmac/syn_if.c
 +++ b/hal/gmac_hal_ops/syn/xgmac/syn_if.c
-@@ -422,7 +422,7 @@ static void *syn_init(struct gmac_hal_pl
+@@ -422,7 +422,7 @@ static void *syn_init(struct gmac_hal_platform_data *gmacpdata)
  
  	/* Populate the mac base addresses */
  	shd->nghd.mac_base =
@@ -46,3 +49,6 @@ Recent kernels removed them.
  				     resource_size(res));
  	if (!shd->nghd.mac_base) {
  		netdev_dbg(ndev, "ioremap fail.\n");
+-- 
+2.31.1
+

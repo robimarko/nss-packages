@@ -1,7 +1,7 @@
-From d74920e2a7c413ef40eed72f9cf287cf6fbd5fb8 Mon Sep 17 00:00:00 2001
+From 33640f25836ec9601a7f6bca248192f96036f07f Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Thu, 20 May 2021 14:56:46 +0200
-Subject: [PATCH 1/2] EDMA: Fix NAPI packet counting
+Subject: [PATCH 4/5] EDMA: Fix NAPI packet counting
 
 There is a bug in the NAPI packet counting that will
 cause NAPI over budget warnings.
@@ -12,9 +12,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  hal/edma/edma_tx_rx.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/hal/edma/edma_tx_rx.c b/hal/edma/edma_tx_rx.c
+index cbb3ffc..da5fb47 100644
 --- a/hal/edma/edma_tx_rx.c
 +++ b/hal/edma/edma_tx_rx.c
-@@ -458,12 +458,12 @@ int edma_napi(struct napi_struct *napi,
+@@ -458,12 +458,12 @@ int edma_napi(struct napi_struct *napi, int budget)
  
  	for (i = 0; i < ehw->txcmpl_rings; i++) {
  		txcmpl_ring = &ehw->txcmpl_ring[i];
@@ -29,3 +31,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	}
  
  	/*
+-- 
+2.31.1
+
