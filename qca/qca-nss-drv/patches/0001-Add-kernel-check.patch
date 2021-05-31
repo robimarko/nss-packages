@@ -1,16 +1,14 @@
-From 3885c752e12f74cad6c97888b797e5903ad1930d Mon Sep 17 00:00:00 2001
-From: Robert Marko <robimarko@gmail.com>
-Date: Thu, 13 May 2021 23:22:38 +0200
-Subject: [PATCH] core: add 5.10 kernel to version check
+From 8218c86bee781899a5de67c822257664b4eecd7d Mon Sep 17 00:00:00 2001
+From: Shane Francis <bigbeeshane@gmail.com>
+Date: Sat, 22 May 2021 22:41:16 +0100
+Subject: [PATCH 1/2] Add kernel check
 
-NSS DRV has a kernel version check, so simply add
-5.10 as supported.
-
-Signed-off-by: Robert Marko <robimarko@gmail.com>
 ---
  nss_core.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
+diff --git a/nss_core.c b/nss_core.c
+index 758004c..4e8badb 100644
 --- a/nss_core.c
 +++ b/nss_core.c
 @@ -52,7 +52,8 @@
@@ -23,3 +21,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #error "Check skb recycle code in this file to match Linux version"
  #endif
  
+-- 
+2.31.1
+

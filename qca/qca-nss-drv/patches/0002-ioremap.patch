@@ -1,24 +1,44 @@
-From b5e2a7167ca3df9fce34f0d7c05468d4f5597275 Mon Sep 17 00:00:00 2001
-From: Robert Marko <robimarko@gmail.com>
-Date: Thu, 13 May 2021 23:33:18 +0200
-Subject: [PATCH] nss-drv: replace ioremap_nocache() with ioremap()
+From 8ba459ef111e4c03f1ce176de60733dd60e9a6f4 Mon Sep 17 00:00:00 2001
+From: Shane Francis <bigbeeshane@gmail.com>
+Date: Sat, 22 May 2021 22:48:00 +0100
+Subject: [PATCH 2/2] ioremap
 
-ioremap_nocache() does not exist anymore.
-
-Signed-off-by: Robert Marko <robimarko@gmail.com>
 ---
+ nss_hal/fsm9010/nss_hal_pvt.c | 4 ++--
  nss_hal/ipq50xx/nss_hal_pvt.c | 6 +++---
  nss_hal/ipq60xx/nss_hal_pvt.c | 8 ++++----
- nss_hal/ipq806x/nss_hal_pvt.c | 4 ++--
- nss_hal/ipq807x/nss_hal_pvt.c | 6 +++---
+ nss_hal/ipq806x/nss_hal_pvt.c | 6 +++---
+ nss_hal/ipq807x/nss_hal_pvt.c | 8 ++++----
  nss_hal/nss_hal.c             | 4 ++--
  nss_meminfo.c                 | 2 +-
  nss_ppe.c                     | 2 +-
- 7 files changed, 16 insertions(+), 16 deletions(-)
+ 8 files changed, 20 insertions(+), 20 deletions(-)
 
+diff --git a/nss_hal/fsm9010/nss_hal_pvt.c b/nss_hal/fsm9010/nss_hal_pvt.c
+index ab3b8ec..d7f0957 100644
+--- a/nss_hal/fsm9010/nss_hal_pvt.c
++++ b/nss_hal/fsm9010/nss_hal_pvt.c
+@@ -145,13 +145,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
+ 	npd->nphys = res_nphys.start;
+ 	npd->vphys = res_vphys.start;
+ 
+-	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
++	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
+ 	if (!npd->nmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+ 	}
+ 
+-	npd->vmap = ioremap_cache(npd->vphys, resource_size(&res_vphys));
++	npd->vmap = ioremap(npd->vphys, resource_size(&res_vphys));
+ 	if (!npd->vmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+diff --git a/nss_hal/ipq50xx/nss_hal_pvt.c b/nss_hal/ipq50xx/nss_hal_pvt.c
+index 3d6dfd0..e3e4bd2 100644
 --- a/nss_hal/ipq50xx/nss_hal_pvt.c
 +++ b/nss_hal/ipq50xx/nss_hal_pvt.c
-@@ -184,13 +184,13 @@ static struct nss_platform_data *__nss_h
+@@ -184,13 +184,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
  	npd->nphys = res_nphys.start;
  	npd->qgic_phys = res_qgic_phys.start;
  
@@ -34,7 +54,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!npd->qgic_map) {
  		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
  		goto out;
-@@ -348,7 +348,7 @@ static int __nss_hal_common_reset(struct
+@@ -348,7 +348,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
  
  	of_node_put(cmn);
  
@@ -43,9 +63,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!nss_misc_reset) {
  		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
  		return -EFAULT;
+diff --git a/nss_hal/ipq60xx/nss_hal_pvt.c b/nss_hal/ipq60xx/nss_hal_pvt.c
+index 4c84cb9..e76ef6d 100644
 --- a/nss_hal/ipq60xx/nss_hal_pvt.c
 +++ b/nss_hal/ipq60xx/nss_hal_pvt.c
-@@ -207,13 +207,13 @@ static struct nss_platform_data *__nss_h
+@@ -207,13 +207,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
  	npd->nphys = res_nphys.start;
  	npd->qgic_phys = res_qgic_phys.start;
  
@@ -61,7 +83,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!npd->qgic_map) {
  		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
  		goto out;
-@@ -433,13 +433,13 @@ static int __nss_hal_common_reset(struct
+@@ -433,13 +433,13 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
  
  	of_node_put(cmn);
  
@@ -77,9 +99,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!nss_misc_reset_flag) {
  		pr_err("%px: ioremap fail for nss_misc_reset_flag\n", nss_dev);
  		return -EFAULT;
+diff --git a/nss_hal/ipq806x/nss_hal_pvt.c b/nss_hal/ipq806x/nss_hal_pvt.c
+index d49fdfa..efd871d 100644
 --- a/nss_hal/ipq806x/nss_hal_pvt.c
 +++ b/nss_hal/ipq806x/nss_hal_pvt.c
-@@ -458,7 +458,7 @@ static struct nss_platform_data *__nss_h
+@@ -458,13 +458,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
  	npd->nphys = res_nphys.start;
  	npd->vphys = res_vphys.start;
  
@@ -88,7 +112,14 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!npd->nmap) {
  		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
  		goto out;
-@@ -711,7 +711,7 @@ static int __nss_hal_common_reset(struct
+ 	}
+ 
+-	npd->vmap = ioremap_cache(npd->vphys, resource_size(&res_vphys));
++	npd->vmap = ioremap(npd->vphys, resource_size(&res_vphys));
+ 	if (!npd->vmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
+ 		goto out;
+@@ -710,7 +710,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
  	}
  	of_node_put(cmn);
  
@@ -97,9 +128,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!fpb_base) {
  		pr_err("%px: ioremap fail for nss_fpb_base\n", nss_dev);
  		return -EFAULT;
+diff --git a/nss_hal/ipq807x/nss_hal_pvt.c b/nss_hal/ipq807x/nss_hal_pvt.c
+index e5cf1b9..734f837 100644
 --- a/nss_hal/ipq807x/nss_hal_pvt.c
 +++ b/nss_hal/ipq807x/nss_hal_pvt.c
-@@ -234,7 +234,7 @@ static struct nss_platform_data *__nss_h
+@@ -234,19 +234,19 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
  	npd->vphys = res_vphys.start;
  	npd->qgic_phys = res_qgic_phys.start;
  
@@ -108,7 +141,12 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!npd->nmap) {
  		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
  		goto out;
-@@ -247,7 +247,7 @@ static struct nss_platform_data *__nss_h
+ 	}
+ 
+-	npd->vmap = ioremap_cache(npd->vphys, resource_size(&res_vphys));
++	npd->vmap = ioremap(npd->vphys, resource_size(&res_vphys));
+ 	if (!npd->vmap) {
+ 		nss_info_always("%px: nss%d: ioremap() fail for vphys\n", nss_ctx, nss_ctx->id);
  		goto out;
  	}
  
@@ -117,7 +155,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!npd->qgic_map) {
  		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
  		goto out;
-@@ -467,7 +467,7 @@ static int __nss_hal_common_reset(struct
+@@ -466,7 +466,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
  	}
  	of_node_put(cmn);
  
@@ -126,9 +164,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!nss_misc_reset) {
  		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
  		return -EFAULT;
+diff --git a/nss_hal/nss_hal.c b/nss_hal/nss_hal.c
+index 7172e2a..5bcc3f1 100644
 --- a/nss_hal/nss_hal.c
 +++ b/nss_hal/nss_hal.c
-@@ -78,9 +78,9 @@ int nss_hal_firmware_load(struct nss_ctx
+@@ -78,9 +78,9 @@ int nss_hal_firmware_load(struct nss_ctx_instance *nss_ctx, struct platform_devi
  		return rc;
  	}
  
@@ -140,9 +180,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		release_firmware(nss_fw);
  		return rc;
  	}
+diff --git a/nss_meminfo.c b/nss_meminfo.c
+index de550ce..fbbc8ad 100644
 --- a/nss_meminfo.c
 +++ b/nss_meminfo.c
-@@ -728,7 +728,7 @@ bool nss_meminfo_init(struct nss_ctx_ins
+@@ -711,7 +711,7 @@ bool nss_meminfo_init(struct nss_ctx_instance *nss_ctx)
  	/*
  	 * meminfo_start is the label where the start address of meminfo map is stored.
  	 */
@@ -151,9 +193,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  							NSS_MEMINFO_RESERVE_AREA_SIZE);
  	if (!meminfo_start) {
  		nss_info_always("%px: cannot remap meminfo start\n", nss_ctx);
+diff --git a/nss_ppe.c b/nss_ppe.c
+index b3d7043..ed5f59d 100644
 --- a/nss_ppe.c
 +++ b/nss_ppe.c
-@@ -357,7 +357,7 @@ void nss_ppe_init(void)
+@@ -354,7 +354,7 @@ void nss_ppe_init(void)
  	/*
  	 * Get the PPE base address
  	 */
@@ -162,3 +206,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (!ppe_pvt.ppe_base) {
  		nss_warning("DRV can't get PPE base address\n");
  		return;
+-- 
+2.31.1
+
