@@ -1,0 +1,174 @@
+From e3ba149ff3690e324f950809df69b676902b00a4 Mon Sep 17 00:00:00 2001
+From: Shane Francis <bigbeeshane@gmail.com>
+Date: Sun, 23 May 2021 15:21:42 +0100
+Subject: [PATCH 3/3] Misc compile fixes missed in the 1st two changes, will
+ split these up in the future
+
+---
+ Makefile                            |  2 +-
+ ecm_conntrack_notifier.c            | 10 +++++++++-
+ ecm_interface.c                     |  4 ++--
+ frontends/ecm_front_end_common.c    |  8 ++++----
+ frontends/nss/ecm_nss_ported_ipv4.c |  1 -
+ frontends/nss/ecm_nss_ported_ipv6.c |  7 +------
+ frontends/sfe/ecm_sfe_ported_ipv4.c |  1 -
+ frontends/sfe/ecm_sfe_ported_ipv6.c |  7 +------
+ 8 files changed, 18 insertions(+), 22 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 0292c72..cb35a61 100644
+--- a/Makefile
++++ b/Makefile
+@@ -257,7 +257,7 @@ ccflags-$(ECM_CLASSIFIER_MARK_ENABLE) += -DECM_CLASSIFIER_MARK_ENABLE
+ # #############################################################################
+ # Define ECM_CLASSIFIER_NL_ENABLE=y in order to enable NL classifier.
+ # #############################################################################
+-ifeq ($(findstring 4.4., $(KERNELVERSION)),)
++ifndef $(ECM_CLASSIFIER_NL_ENABLE)
+ ECM_CLASSIFIER_NL_ENABLE=y
+ endif
+ ecm-$(ECM_CLASSIFIER_NL_ENABLE) += ecm_classifier_nl.o
+diff --git a/ecm_conntrack_notifier.c b/ecm_conntrack_notifier.c
+index 83669e5..8dcaf5e 100644
+--- a/ecm_conntrack_notifier.c
++++ b/ecm_conntrack_notifier.c
+@@ -421,7 +421,11 @@ int ecm_conntrack_notifier_init(struct dentry *dentry)
+ 	/*
+ 	 * Eventing subsystem is available so we register a notifier hook to get fast notifications of expired connections
+ 	 */
++#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
++	result = nf_conntrack_register_chain_notifier(&init_net, &ecm_conntrack_notifier);
++#else
+ 	result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
++#endif
+ 	if (result < 0) {
+ 		DEBUG_ERROR("Can't register nf notifier hook.\n");
+ 		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
+@@ -440,7 +444,11 @@ void ecm_conntrack_notifier_exit(void)
+ {
+ 	DEBUG_INFO("ECM Conntrack Notifier exit\n");
+ #ifdef CONFIG_NF_CONNTRACK_EVENTS
+-	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
++#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
++	nf_conntrack_unregister_chain_notifier(&init_net, &ecm_conntrack_notifier);
++#else
++ 	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
++#endif
+ #endif
+ 	/*
+ 	 * Remove the debugfs files recursively.
+diff --git a/ecm_interface.c b/ecm_interface.c
+index a8c82b1..0aab8a8 100644
+--- a/ecm_interface.c
++++ b/ecm_interface.c
+@@ -307,7 +307,7 @@ static struct net_device *ecm_interface_dev_find_by_local_addr_ipv6(ip_addr_t ad
+ 	struct net_device *dev;
+ 
+ 	ECM_IP_ADDR_TO_NIN6_ADDR(addr6, addr);
+-	dev = (struct net_device *)ipv6_dev_find(&init_net, &addr6, 1);
++	dev = (struct net_device *)ipv6_dev_find_and_hold(&init_net, &addr6, 1);
+ 	return dev;
+ }
+ #endif
+@@ -709,7 +709,7 @@ static bool ecm_interface_mac_addr_get_ipv6_no_route(struct net_device *dev, ip_
+ 	 * Get the MAC address that corresponds to IP address given.
+ 	 */
+ 	ECM_IP_ADDR_TO_NIN6_ADDR(daddr, addr);
+-	local_dev = ipv6_dev_find(&init_net, &daddr, 1);
++	local_dev = ipv6_dev_find_and_hold(&init_net, &daddr, 1);
+ 	if (local_dev) {
+ 		DEBUG_TRACE("%pi6 is a local address\n", &daddr);
+ 		memcpy(mac_addr, dev->dev_addr, ETH_ALEN);
+diff --git a/frontends/ecm_front_end_common.c b/frontends/ecm_front_end_common.c
+index cceb839..7348ac2 100644
+--- a/frontends/ecm_front_end_common.c
++++ b/frontends/ecm_front_end_common.c
+@@ -161,10 +161,6 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
+ #else
+ 		DEBUG_TRACE("%px: GRE IPv%d TUN feature is disabled - do not allow acceleration\n", skb, ip_version);
+ 		return false;
+-#endif
+-#else
+-	DEBUG_TRACE("%px: GRE%d feature is disabled - do not allow acceleration\n", skb, ip_version);
+-	return false;
+ #endif
+ 	}
+ 
+@@ -229,6 +225,10 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
+ 	 */
+ 	DEBUG_TRACE("%px: GRE IPv%d pass through - allow acceleration\n", skb, ip_version);
+ 	return true;
++#else
++	DEBUG_TRACE("%px: GRE%d feature is disabled - do not allow acceleration\n", skb, ip_version);
++	return false;
++#endif
+ }
+ 
+ /*
+diff --git a/frontends/nss/ecm_nss_ported_ipv4.c b/frontends/nss/ecm_nss_ported_ipv4.c
+index cd7d338..6240a75 100644
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -2747,7 +2747,6 @@ done:
+  */
+ bool ecm_nss_ported_ipv4_debugfs_init(struct dentry *dentry)
+ {
+-	struct dentry *udp_dentry;
+ 
+ 	debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
+ 						&ecm_nss_ported_ipv4_accelerated_count[ECM_NSS_PORTED_IPV4_PROTO_UDP]);
+diff --git a/frontends/nss/ecm_nss_ported_ipv6.c b/frontends/nss/ecm_nss_ported_ipv6.c
+index 31aded8..c3c127b 100644
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -2533,14 +2533,9 @@ done:
+  */
+ bool ecm_nss_ported_ipv6_debugfs_init(struct dentry *dentry)
+ {
+-	struct dentry *udp_dentry;
+ 
+-	udp_dentry = debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
++	debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
+ 						&ecm_nss_ported_ipv6_accelerated_count[ECM_NSS_PORTED_IPV6_PROTO_UDP]);
+-	if (!udp_dentry) {
+-		DEBUG_ERROR("Failed to create ecm nss ipv6 udp_accelerated_count file in debugfs\n");
+-		return false;
+-	}
+ 
+ 	debugfs_create_u32("tcp_accelerated_count", S_IRUGO, dentry,
+ 					&ecm_nss_ported_ipv6_accelerated_count[ECM_NSS_PORTED_IPV6_PROTO_TCP]);
+diff --git a/frontends/sfe/ecm_sfe_ported_ipv4.c b/frontends/sfe/ecm_sfe_ported_ipv4.c
+index 750d00d..a1c2c71 100644
+--- a/frontends/sfe/ecm_sfe_ported_ipv4.c
++++ b/frontends/sfe/ecm_sfe_ported_ipv4.c
+@@ -2479,7 +2479,6 @@ done:
+  */
+ bool ecm_sfe_ported_ipv4_debugfs_init(struct dentry *dentry)
+ {
+-	struct dentry *udp_dentry;
+ 
+ 	debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
+ 						&ecm_sfe_ported_ipv4_accelerated_count[ECM_SFE_PORTED_IPV4_PROTO_UDP]);
+diff --git a/frontends/sfe/ecm_sfe_ported_ipv6.c b/frontends/sfe/ecm_sfe_ported_ipv6.c
+index d545eb7..67c6efa 100644
+--- a/frontends/sfe/ecm_sfe_ported_ipv6.c
++++ b/frontends/sfe/ecm_sfe_ported_ipv6.c
+@@ -2324,14 +2324,9 @@ done:
+  */
+ bool ecm_sfe_ported_ipv6_debugfs_init(struct dentry *dentry)
+ {
+-	struct dentry *udp_dentry;
+ 
+-	udp_dentry = debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
++	debugfs_create_u32("udp_accelerated_count", S_IRUGO, dentry,
+ 						&ecm_sfe_ported_ipv6_accelerated_count[ECM_SFE_PORTED_IPV6_PROTO_UDP]);
+-	if (!udp_dentry) {
+-		DEBUG_ERROR("Failed to create ecm sfe ipv6 udp_accelerated_count file in debugfs\n");
+-		return false;
+-	}
+ 
+ 	debugfs_create_u32("tcp_accelerated_count", S_IRUGO, dentry,
+ 					&ecm_sfe_ported_ipv6_accelerated_count[ECM_SFE_PORTED_IPV6_PROTO_TCP]);
+-- 
+2.31.1
+
