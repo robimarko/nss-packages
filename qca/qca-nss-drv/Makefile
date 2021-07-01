@@ -20,7 +20,9 @@ define KernelPackage/qca-nss-drv
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
-  DEPENDS:=@(TARGET_ipq807x||TARGET_ipq60xx) +kmod-qca-nss-dp
+  DEPENDS:=@(TARGET_ipq806x||TARGET_ipq807x||TARGET_ipq60xx) \
+    +TARGET_ipq807x:kmod-qca-nss-dp \
+    +TARGET_ipq806x:kmod-qca-nss-gmac
   TITLE:=Kernel driver for NSS (core driver)
   FILES:=$(PKG_BUILD_DIR)/qca-nss-drv.ko
   AUTOLOAD:=$(call AutoLoad,32,qca-nss-drv)
@@ -52,7 +54,7 @@ endef
 
 EXTRA_CFLAGS+= -I$(STAGING_DIR)/usr/include/qca-nss-gmac -I$(STAGING_DIR)/usr/include/qca-nss-dp -I$(STAGING_DIR)/usr/include/qca-ssdk
 
-ifneq (, $(findstring $(CONFIG_TARGET_BOARD), "ipq807x" "ipq60xx"))
+ifneq (, $(findstring $(CONFIG_TARGET_BOARD), "ipq807x" "ipq60xx", "ipq806x"))
 EXTRA_CFLAGS+= -DNSS_MEM_PROFILE_MEDIUM
 LOW_MEM_PROFILE_MAKE_OPTS=y
 endif
@@ -99,12 +101,20 @@ ifeq ($(CONFIG_TARGET_BOARD), "ipq807x")
     SOC="ipq807x_64"
 else ifeq ($(CONFIG_TARGET_BOARD), "ipq60xx")
     SOC="ipq60xx_64"
+else
+    SOC=$(CONFIG_TARGET_BOARD)
+endif
+
+ifeq ($(CONFIG_TARGET_BOARD), "ipq806x")
+	TARGET_NSS_MINOR_VERSION=0
+else
+	TARGET_NSS_MINOR_VERSION=3
 endif
 
 define Build/Configure
 	$(LN) arch/nss_$(SOC).h $(PKG_BUILD_DIR)/exports/nss_arch.h
 	sed -i "s/define NSS_FW_VERSION_MAJOR.*/define NSS_FW_VERSION_MAJOR 11/" $(PKG_BUILD_DIR)/exports/nss_fw_version.h
-	sed -i "s/define NSS_FW_VERSION_MINOR.*/define NSS_FW_VERSION_MINOR 3/" $(PKG_BUILD_DIR)/exports/nss_fw_version.h
+	sed -i "s/define NSS_FW_VERSION_MINOR.*/define NSS_FW_VERSION_MINOR $(TARGET_NSS_MINOR_VERSION)/" $(PKG_BUILD_DIR)/exports/nss_fw_version.h
 endef
 
 define Build/Compile

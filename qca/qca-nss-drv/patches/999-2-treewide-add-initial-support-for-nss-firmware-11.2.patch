@@ -1,0 +1,239 @@
+From e29e2d7f83a7cfafcb8089da886ac02c2f4f7c7c Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Tue, 15 Jun 2021 15:33:10 +0200
+Subject: [PATCH] treewide: add initial support for nss firmware 11.2
+
+Remove not supported feature to make 11.2 firmware working.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ exports/nss_ipv4.h |  4 ++++
+ exports/nss_ipv6.h |  4 ++++
+ exports/nss_n2h.h  | 18 ++++++++++++++++++
+ nss_ipv4_strings.c |  2 ++
+ nss_ipv6_strings.c |  2 ++
+ nss_n2h_stats.c    | 14 ++++++++++++--
+ nss_n2h_strings.c  | 12 ++++++++++++
+ 7 files changed, 54 insertions(+), 2 deletions(-)
+
+diff --git a/exports/nss_ipv4.h b/exports/nss_ipv4.h
+index 25c4d82..18a70db 100644
+--- a/exports/nss_ipv4.h
++++ b/exports/nss_ipv4.h
+@@ -611,8 +611,10 @@ struct nss_ipv4_rule_create_msg {
+ 			/**< RPS parameter. */
+ 	struct nss_ipv4_igs_rule igs_rule;
+ 			/**< Ingress shaping related accleration parameters. */
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,3))
+ 	struct nss_ipv4_identifier_rule identifier;
+ 			/**< Rule for adding identifier. */
++#endif
+ #if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,3))
+ 	struct nss_ipv4_mirror_rule mirror_rule;
+ 			/**< Mirror rule parameter. */
+@@ -902,10 +904,12 @@ enum nss_ipv4_exception_events {
+ 	NSS_IPV4_EXCEPTION_EVENT_MC_UPDATE_FAILURE,
+ 	NSS_IPV4_EXCEPTION_EVENT_MC_PBUF_ALLOC_FAILURE,
+ 	NSS_IPV4_EXCEPTION_EVENT_PPPOE_BRIDGE_NO_ICME,
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	NSS_IPV4_EXCEPTION_EVENT_PPPOE_NO_SESSION,
+ 	NSS_IPV4_EXCEPTION_EVENT_ICMP_IPV4_GRE_HEADER_INCOMPLETE,
+ 	NSS_IPV4_EXCEPTION_EVENT_ICMP_IPV4_ESP_HEADER_INCOMPLETE,
+ 	NSS_IPV4_EXCEPTION_EVENT_EMESH_PRIO_MISMATCH,
++#endif
+ 	NSS_IPV4_EXCEPTION_EVENT_MAX
+ };
+ 
+diff --git a/exports/nss_ipv6.h b/exports/nss_ipv6.h
+index a21f939..ce9a89b 100644
+--- a/exports/nss_ipv6.h
++++ b/exports/nss_ipv6.h
+@@ -428,11 +428,13 @@ enum nss_ipv6_exception_events {
+ 	NSS_IPV6_EXCEPTION_EVENT_TUNIPIP6_NEEDS_FRAGMENTATION,
+ 	NSS_IPV6_EXCEPTION_EVENT_PPPOE_BRIDGE_NO_ICME,
+ 	NSS_IPV6_EXCEPTION_EVENT_DONT_FRAG_SET,
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	NSS_IPV6_EXCEPTION_EVENT_REASSEMBLY_NOT_SUPPORTED,
+ 	NSS_IPV6_EXCEPTION_EVENT_PPPOE_NO_SESSION,
+ 	NSS_IPV6_EXCEPTION_EVENT_ICMP_IPV6_GRE_HEADER_INCOMPLETE,
+ 	NSS_IPV6_EXCEPTION_EVENT_ICMP_IPV6_ESP_HEADER_INCOMPLETE,
+ 	NSS_IPV6_EXCEPTION_EVENT_EMESH_PRIO_MISMATCH,
++#endif
+ 	NSS_IPV6_EXCEPTION_EVENT_MAX
+ };
+ 
+@@ -703,8 +705,10 @@ struct nss_ipv6_rule_create_msg {
+ 			/**< RPS parameter. */
+ 	struct nss_ipv6_igs_rule igs_rule;
+ 			/**< Ingress shaping related accleration parameters. */
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	struct nss_ipv6_identifier_rule identifier;
+ 			/**< Rule for adding identifier. */
++#endif
+ #if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,3))
+ 	struct nss_ipv6_mirror_rule mirror_rule;
+ 			/**< Mirror rule parameter. */
+diff --git a/exports/nss_n2h.h b/exports/nss_n2h.h
+index 1613f41..a5e37f6 100644
+--- a/exports/nss_n2h.h
++++ b/exports/nss_n2h.h
+@@ -77,18 +77,30 @@ enum nss_n2h_stats_types {
+ 	NSS_N2H_STATS_TOTAL_TICKS,	/**< Total clock ticks spend inside the N2H. */
+ 	NSS_N2H_STATS_WORST_CASE_TICKS,	/**< Worst case iteration of the exception path in ticks. */
+ 	NSS_N2H_STATS_ITERATIONS,	/**< Number of iterations around the N2H. */
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	NSS_N2H_STATS_PBUF_OCM_TOTAL_COUNT,	/**< Number of pbuf OCM total count. */
+ 	NSS_N2H_STATS_PBUF_OCM_FREE_COUNT,	/**< Number of pbuf OCM free count. */
+ 	NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_WITH_PAYLOAD,
+ 					/**< Number of pbuf OCM allocations that have failed with payload. */
+ 	NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_NO_PAYLOAD,
++#else
++	NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS,	/* Number of pbuf ocm allocations that have failed */
++	NSS_N2H_STATS_PBUF_OCM_FREE_COUNT,	/* Number of pbuf ocm free count */
++	NSS_N2H_STATS_PBUF_OCM_TOTAL_COUNT,	/* Number of pbuf ocm total count */
++#endif
+ 					/**< Number of pbuf OCM allocations that have failed without payload. */
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	NSS_N2H_STATS_PBUF_DEFAULT_TOTAL_COUNT,	/**< Number of pbuf default total count. */
+ 	NSS_N2H_STATS_PBUF_DEFAULT_FREE_COUNT,	/**< Number of pbuf default free count. */
+ 	NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_WITH_PAYLOAD,
+ 					/**< Number of pbuf default allocations that have failed with payload. */
+ 	NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_NO_PAYLOAD,
+ 	/**< Number of pbuf default allocations that have failed without payload. */
++#else
++	NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS,	/* Number of pbuf default allocations that have failed */
++	NSS_N2H_STATS_PBUF_DEFAULT_FREE_COUNT,	/* Number of pbuf default free count */
++	NSS_N2H_STATS_PBUF_DEFAULT_TOTAL_COUNT,	/* Number of pbuf default total count */
++#endif
+ 
+ 	NSS_N2H_STATS_PAYLOAD_ALLOC_FAILS,	/**< Number of pbuf allocations that have failed because there were no free payloads. */
+ 	NSS_N2H_STATS_PAYLOAD_FREE_COUNT,	/**< Number of free payloads that exist. */
+@@ -277,12 +289,18 @@ struct nss_n2h_wifi_payloads {
+  *	Payload buffer manager statistics.
+  */
+ struct nss_n2h_pbuf_mgr_stats {
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	uint32_t pbuf_total_count;	/**< Total number of buffers, free or in use. */
+ 	uint32_t pbuf_free_count;	/**< Number of currently free buffers. */
+ 	uint32_t pbuf_alloc_fails_with_payload;
+ 					/**< Number of buffer allocation failures. */
+ 	uint32_t pbuf_alloc_fails_no_payload;
+ 					/**< Number of buffer allocation failures without payload. */
++#else
++	uint32_t pbuf_alloc_fails;	/**< Number of buffer allocation failures. */
++	uint32_t pbuf_free_count;	/**< Number of currently free buffers. */
++	uint32_t pbuf_total_count;	/**< Total number of buffers, free or in use. */
++#endif
+ };
+ 
+ /**
+diff --git a/nss_ipv4_strings.c b/nss_ipv4_strings.c
+index ce4c249..8fd6ffa 100644
+--- a/nss_ipv4_strings.c
++++ b/nss_ipv4_strings.c
+@@ -105,10 +105,12 @@ struct nss_stats_info nss_ipv4_strings_exception_stats[NSS_IPV4_EXCEPTION_EVENT_
+ 	{"mc_update_failure"			, NSS_STATS_TYPE_EXCEPTION},
+ 	{"mc_pbuf_alloc_failure"		, NSS_STATS_TYPE_EXCEPTION},
+ 	{"pppoe_bridge_no_icme"			, NSS_STATS_TYPE_EXCEPTION},
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	{"pppoe_no_session"			, NSS_STATS_TYPE_DROP},
+ 	{"icmp_ipv4_gre_hdr_incomplete"		, NSS_STATS_TYPE_EXCEPTION},
+ 	{"icmp_ipv4_esp_hdr_incomplete"		, NSS_STATS_TYPE_EXCEPTION},
+ 	{"emesh_prio_mismatch"			, NSS_STATS_TYPE_EXCEPTION},
++#endif
+ };
+ 
+ /*
+diff --git a/nss_ipv6_strings.c b/nss_ipv6_strings.c
+index 29df9c9..49cfe53 100644
+--- a/nss_ipv6_strings.c
++++ b/nss_ipv6_strings.c
+@@ -81,11 +81,13 @@ struct nss_stats_info nss_ipv6_strings_exception_stats[NSS_IPV6_EXCEPTION_EVENT_
+ 	{"tunipip6_needs_fragmentation"			, NSS_STATS_TYPE_EXCEPTION},
+ 	{"pppoe_bridge_no_icme"				, NSS_STATS_TYPE_EXCEPTION},
+ 	{"dont_frag_set"				, NSS_STATS_TYPE_EXCEPTION},
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	{"reassembly_not_supported"			, NSS_STATS_TYPE_EXCEPTION},
+ 	{"pppoe_no_session"				, NSS_STATS_TYPE_DROP},
+ 	{"icmp_gre_header_incomplete"			, NSS_STATS_TYPE_EXCEPTION},
+ 	{"icmp_esp_header_incomplete"			, NSS_STATS_TYPE_EXCEPTION},
+ 	{"emesh_prio_mismatch"				, NSS_STATS_TYPE_EXCEPTION},
++#endif
+ };
+ 
+ /*
+diff --git a/nss_n2h_stats.c b/nss_n2h_stats.c
+index 60ff88b..97d6139 100644
+--- a/nss_n2h_stats.c
++++ b/nss_n2h_stats.c
+@@ -130,15 +130,23 @@ void nss_n2h_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_n2h_stats_s
+ 	/*
+ 	 * pbuf manager ocm and default pool stats
+ 	 */
+-	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_WITH_PAYLOAD] += nnss->pbuf_ocm_stats.pbuf_alloc_fails_with_payload;
+ 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_FREE_COUNT] = nnss->pbuf_ocm_stats.pbuf_free_count;
+ 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_TOTAL_COUNT] = nnss->pbuf_ocm_stats.pbuf_total_count;
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
++	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_WITH_PAYLOAD] += nnss->pbuf_ocm_stats.pbuf_alloc_fails_with_payload;
+ 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS_NO_PAYLOAD] += nnss->pbuf_ocm_stats.pbuf_alloc_fails_no_payload;
++#else
++	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_OCM_ALLOC_FAILS] += nnss->pbuf_ocm_stats.pbuf_alloc_fails;
++#endif
+ 
+-	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_WITH_PAYLOAD] += nnss->pbuf_default_stats.pbuf_alloc_fails_with_payload;
+ 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_FREE_COUNT] = nnss->pbuf_default_stats.pbuf_free_count;
+ 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_TOTAL_COUNT] = nnss->pbuf_default_stats.pbuf_total_count;
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_NO_PAYLOAD] += nnss->pbuf_default_stats.pbuf_alloc_fails_no_payload;
++	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS_WITH_PAYLOAD] += nnss->pbuf_default_stats.pbuf_alloc_fails_with_payload;
++#else
++	nss_n2h_stats[id][NSS_N2H_STATS_PBUF_DEFAULT_ALLOC_FAILS] += nnss->pbuf_default_stats.pbuf_alloc_fails;
++#endif
+ 
+ 	/*
+ 	 * payload mgr stats
+@@ -167,8 +175,10 @@ void nss_n2h_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_n2h_stats_s
+ 	 */
+ 	nss_n2h_stats[id][NSS_N2H_STATS_N2H_TOT_PAYLOADS] = nnss->tot_payloads;
+ 
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	nss_n2h_stats[id][NSS_N2H_STATS_N2H_INTERFACE_INVALID] += nnss->data_interface_invalid;
+ 	nss_n2h_stats[id][NSS_N2H_STATS_ENQUEUE_RETRIES] += nnss->enqueue_retries;
++#endif
+ 
+ 	spin_unlock_bh(&nss_top->stats_lock);
+ }
+diff --git a/nss_n2h_strings.c b/nss_n2h_strings.c
+index c4c2ce5..347433b 100644
+--- a/nss_n2h_strings.c
++++ b/nss_n2h_strings.c
+@@ -38,14 +38,26 @@ struct nss_stats_info nss_n2h_strings_stats[NSS_N2H_STATS_MAX] = {
+ 	{"ticks"			, NSS_STATS_TYPE_SPECIAL},
+ 	{"worst_ticks"			, NSS_STATS_TYPE_SPECIAL},
+ 	{"iterations"			, NSS_STATS_TYPE_SPECIAL},
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	{"pbuf_ocm_total_count"		, NSS_STATS_TYPE_SPECIAL},
+ 	{"pbuf_ocm_free_count"		, NSS_STATS_TYPE_SPECIAL},
+ 	{"pbuf_ocm_alloc_fail_payload"	, NSS_STATS_TYPE_SPECIAL},
+ 	{"pbuf_ocm_alloc_fail_nopayload", NSS_STATS_TYPE_SPECIAL},
++#else
++	{"pbuf_ocm_alloc_fails", NSS_STATS_TYPE_SPECIAL},
++	{"pbuf_ocm_free_count", NSS_STATS_TYPE_SPECIAL},
++	{"pbuf_ocm_total_count", NSS_STATS_TYPE_SPECIAL},
++#endif
++#if (NSS_FW_VERSION_CODE > NSS_FW_VERSION(11,2))
+ 	{"pbuf_def_total_count"		, NSS_STATS_TYPE_SPECIAL},
+ 	{"pbuf_def_free_count"		, NSS_STATS_TYPE_SPECIAL},
+ 	{"pbuf_def_alloc_fail_payload"	, NSS_STATS_TYPE_SPECIAL},
+ 	{"pbuf_def_alloc_fail_nopayload", NSS_STATS_TYPE_SPECIAL},
++#else
++	{"pbuf_def_alloc_fails"		, NSS_STATS_TYPE_SPECIAL},
++	{"pbuf_def_free_count"		, NSS_STATS_TYPE_SPECIAL},
++	{"pbuf_def_total_count"		, NSS_STATS_TYPE_SPECIAL},
++#endif
+ 	{"payload_alloc_fails"		, NSS_STATS_TYPE_SPECIAL},
+ 	{"payload_free_count"		, NSS_STATS_TYPE_SPECIAL},
+ 	{"h2n_control_pkts"		, NSS_STATS_TYPE_SPECIAL},
+-- 
+2.31.1
+
