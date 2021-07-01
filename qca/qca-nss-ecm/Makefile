@@ -18,7 +18,7 @@ define KernelPackage/qca-nss-ecm
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
-  DEPENDS:=@(TARGET_ipq807x||TARGET_ipq60xx) \
+  DEPENDS:=@(TARGET_ipq807x||TARGET_ipq60xx||TARGET_ipq806x) \
   	+kmod-qca-nss-drv \
 	+iptables-mod-extra \
 	+kmod-ipt-conntrack \
@@ -52,7 +52,7 @@ endef
 
 EXTRA_CFLAGS+=-I$(STAGING_DIR)/usr/include/qca-nss-drv
 
-ifneq (, $(findstring $(CONFIG_TARGET_BOARD), "ipq807x" "ipq60xx"))
+ifneq (, $(findstring $(CONFIG_TARGET_BOARD), "ipq807x" "ipq60xx", "ipq806x"))
 ECM_MAKE_OPTS+= ECM_FRONT_END_NSS_ENABLE=y \
 		ECM_CLASSIFIER_HYFI_ENABLE=n \
 		ECM_MULTICAST_ENABLE=n \
@@ -64,7 +64,7 @@ ECM_MAKE_OPTS+= ECM_FRONT_END_NSS_ENABLE=y \
 		ECM_INTERFACE_SIT_ENABLE=n \
 		ECM_INTERFACE_TUNIPIP6_ENABLE=n \
 		ECM_INTERFACE_RAWIP_ENABLE=n \
-		ECM_INTERFACE_VLAN_ENABLE=n \
+		ECM_INTERFACE_VLAN_ENABLE=y \
 		ECM_CLASSIFIER_MARK_ENABLE=n \
 		ECM_CLASSIFIER_DSCP_ENABLE=n \
 		ECM_CLASSIFIER_PCC_ENABLE=n \
@@ -76,6 +76,8 @@ ifeq ($(CONFIG_TARGET_BOARD), "ipq807x")
     SOC="ipq807x_64"
 else ifeq ($(CONFIG_TARGET_BOARD), "ipq60xx")
     SOC="ipq60xx_64"
+else
+    SOC=$(CONFIG_TARGET_BOARD)
 endif
 
 define Build/InstallDev
