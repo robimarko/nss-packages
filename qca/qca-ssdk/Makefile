@@ -17,7 +17,7 @@ define KernelPackage/qca-ssdk-nohnat
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Kernel driver for QCA SSDK
-  DEPENDS:=@(TARGET_ipq807x)
+  DEPENDS:=@(TARGET_ipq807x||TARGET_ipq806x)
   FILES:=$(PKG_BUILD_DIR)/build/bin/qca-ssdk.ko
   AUTOLOAD:=$(call AutoLoad,30,qca-ssdk)
 endef
@@ -46,7 +46,7 @@ MAKE_FLAGS+= \
 	EXTRA_CFLAGS=-I$(STAGING_DIR)/usr/include \
 	$(KERNEL_MAKE_FLAGS)
 
-ifneq (, $(findstring $(CONFIG_TARGET_BOARD), "ipq60xx" "ipq807x"))
+ifneq (, $(findstring $(CONFIG_TARGET_BOARD), "ipq60xx" "ipq807x" "ipq806x"))
     MAKE_FLAGS+= PTP_FEATURE=disable SWCONFIG_FEATURE=disable
 endif
 
@@ -54,6 +54,8 @@ ifeq ($(CONFIG_TARGET_BOARD), "ipq807x")
     MAKE_FLAGS+= CHIP_TYPE=HPPE
 else ifeq ($(CONFIG_TARGET_BOARD), "ipq60xx")
     MAKE_FLAGS+= CHIP_TYPE=CPPE
+else ifeq ($(CONFIG_TARGET_BOARD), "ipq806x")
+    MAKE_FLAGS+= HK_CHIP=enable CHIP_TYPE=MP
 endif
 
 define Build/InstallDev
