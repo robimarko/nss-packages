@@ -1,0 +1,129 @@
+Fix candidate for the kernel crash in ecm_db_exit+0x42c/0x49c [ecm], was in ecm_db_ipv4_route_table_update_event
+Replace the definition of ecm_addr from ip_addr_t to struct in6_addr, add adapted functions to use ipv6 addresses instead
+Add a safeguard to the third argument of ipv6_addr_prefix()
+diff -ur qca-nss-ecm-orig/ecm_db/ecm_db.c qca-nss-ecm-2021-04-29-c115aec3/ecm_db/ecm_db.c
+--- a/ecm_db/ecm_db.c	2021-12-06 18:59:24.838341613 +0100
++++ b/ecm_db/ecm_db.c	2021-12-06 19:00:35.585841437 +0100
+@@ -276,7 +276,7 @@
+ 		struct ecm_db_connection_instance *cin;
+ 		struct in6_addr prefix_addr;
+ 		struct in6_addr ecm_in6;
+-		ip_addr_t ecm_addr;
++		struct in6_addr ecm_addr;
+ 		struct ecm_db_iface_instance *interfaces[ECM_DB_IFACE_HEIRARCHY_MAX];
+ 		int32_t if_first;
+ 		struct net_device *ecm_dev;
+@@ -291,14 +291,14 @@
+ 		/*
+ 		 * Get the ECM connection's destination IPv6 address.
+ 		 */
+-		ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, ecm_addr);
+-		ECM_IP_ADDR_TO_NIN6_ADDR(ecm_in6, ecm_addr);
++		ecm_db_ipv6_connection_address_get(ci, ECM_DB_OBJ_DIR_TO, ecm_addr);
++		ECM_IP6_ADDR_TO_NIN6_ADDR(ecm_in6, ecm_addr);
+ 
+ 		/*
+ 		 * Compute ECM connection's prefix destination address by masking it with the
+ 		 * route config's destination address prefix length.
+ 		 */
+-		ipv6_addr_prefix(&prefix_addr, &ecm_in6, cfg->fc_dst_len);
++		ipv6_addr_prefix(&prefix_addr, &ecm_in6, min((int)(8 * sizeof(struct in6_addr)), cfg->fc_dst_len));
+ 
+ 		DEBUG_TRACE("dest addr prefix: %pI6 prefix_len: %d ecm_in6: %pI6\n", &prefix_addr, cfg->fc_dst_len, &ecm_in6);
+ 
+@@ -319,14 +319,14 @@
+ 			 * ECM's destination address didn't match.
+ 			 * Get the ECM connection's source IPv6 address.
+ 			 */
+-			ecm_db_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, ecm_addr);
+-			ECM_IP_ADDR_TO_NIN6_ADDR(ecm_in6, ecm_addr);
++			ecm_db_ipv6_connection_address_get(ci, ECM_DB_OBJ_DIR_FROM, ecm_addr);
++			ECM_IP6_ADDR_TO_NIN6_ADDR(ecm_in6, ecm_addr);
+ 
+ 			/*
+ 			 * Compute ECM connection's prefix source address by masking it with the
+ 			 * route config's destination address prefix length.
+ 			 */
+-			ipv6_addr_prefix(&prefix_addr, &ecm_in6, cfg->fc_dst_len);
++			ipv6_addr_prefix(&prefix_addr, &ecm_in6, min((int)(8 * sizeof(struct in6_addr)), cfg->fc_dst_len));
+ 
+ 			DEBUG_TRACE("src addr prefix: %pI6 prefix_len: %d ecm_in6: %pI6\n", &prefix_addr, cfg->fc_dst_len, &ecm_in6);
+ 
+diff -ur a/ecm_db/ecm_db_connection.c b/ecm_db/ecm_db_connection.c
+--- a/ecm_db/ecm_db_connection.c	2021-12-06 18:59:24.838341613 +0100
++++ b/ecm_db/ecm_db_connection.c	2021-12-06 19:00:35.587841395 +0100
+@@ -655,6 +655,19 @@
+ EXPORT_SYMBOL(ecm_db_connection_address_get);
+ 
+ /*
++ * ecm_db_ipv6_connection_address_get()
++ *	Return ip address address
++ */
++void ecm_db_ipv6_connection_address_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir, struct in6_addr addr)
++{
++	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed", ci);
++	DEBUG_CHECK_MAGIC(ci->mapping[dir], ECM_DB_MAPPING_INSTANCE_MAGIC, "%px: magic failed", ci->mapping[dir]);
++	DEBUG_CHECK_MAGIC(ci->mapping[dir]->host, ECM_DB_HOST_INSTANCE_MAGIC, "%px: magic failed", ci->mapping[dir]->host);
++	ECM_IP6_ADDR_COPY(addr, ci->mapping[dir]->host->address6);
++}
++EXPORT_SYMBOL(ecm_db_ipv6_connection_address_get);
++
++/*
+  * ecm_db_connection_port_get()
+  *	Return port
+  */
+diff -ur a/ecm_db/ecm_db_connection.h b/ecm_db/ecm_db_connection.h
+--- a/ecm_db/ecm_db_connection.h	2021-12-06 18:59:24.838341613 +0100
++++ b/ecm_db/ecm_db_connection.h	2021-12-06 19:00:35.591841310 +0100
+@@ -248,6 +248,7 @@
+ uint32_t ecm_db_connection_serial_get(struct ecm_db_connection_instance *ci);
+ 
+ void ecm_db_connection_address_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir, ip_addr_t addr);
++void ecm_db_ipv6_connection_address_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir, struct in6_addr addr);
+ 
+ int ecm_db_connection_port_get(struct ecm_db_connection_instance *ci, ecm_db_obj_dir_t dir);
+ 
+diff -ur a/ecm_db/ecm_db_host.h b/ecm_db/ecm_db_host.h
+--- a/ecm_db/ecm_db_host.h	2021-12-06 18:59:24.839341592 +0100
++++ b/ecm_db/ecm_db_host.h	2021-12-06 19:00:35.588841373 +0100
+@@ -34,7 +34,8 @@
+ 	struct ecm_db_host_instance *prev;		/* Previous instance in global list */
+ 	struct ecm_db_host_instance *hash_next;		/* Next host in the chain of hosts */
+ 	struct ecm_db_host_instance *hash_prev;		/* previous host in the chain of hosts */
+-	ip_addr_t address;				/* RO: IPv4/v6 Address of this host */
++	ip_addr_t address;				/* RO: IPv4 Address of this host */
++	struct in6_addr address6;			/* RO: IPv6 Address of this host */
+ 	bool on_link;					/* RO: false when this host is reached via a gateway */
+ 	uint32_t time_added;				/* RO: DB time stamp when the host was added into the database */
+ 
+diff -ur a/ecm_types.h b/ecm_types.h
+--- a/ecm_types.h	2021-12-06 18:59:24.860341147 +0100
++++ b/ecm_types.h	2021-12-06 19:00:35.591841310 +0100
+@@ -222,6 +222,27 @@
+ 	}
+ 
+ /*
++ * This macro converts from ECM ipv6 to Linux IPv6 address (network order)
++ */
++#define ECM_IP6_ADDR_TO_NIN6_ADDR(nout6, nin6) \
++	{ \
++		size_t i; \
++		ecm_type_check_linux_ipv6(nin6); \
++		ecm_type_check_linux_ipv6(nout6); \
++		for(i=0; i<16; nout6.in6_u.u6_addr8[i] = nin6.in6_u.u6_addr8[15-i], ++i); \
++	}
++ 
++/*
++ * This macro copies ipv6 addresses
++ */
++#define ECM_IP6_ADDR_COPY(nout6, nin6) \
++	{ \
++		ecm_type_check_linux_ipv6(nin6); \
++		ecm_type_check_linux_ipv6(nout6); \
++		nout6.in6_u = nin6.in6_u; \
++	}
++
++/*
+  * This macro converts from Linux IPv6 address (host order) to ECM ip_addr_t
+  */
+ #define ECM_HIN6_ADDR_TO_IP_ADDR(ipaddrt, hin6) \
