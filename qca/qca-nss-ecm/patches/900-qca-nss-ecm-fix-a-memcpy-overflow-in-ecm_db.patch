@@ -35,7 +35,7 @@ Call trace:
  el0_sync+0x184/0x1c0
 Code: aa0003e1 912b4040 910003fd 97fff56c (d4210000)
 
-Signed-off-by: Francis Le Bourse <francis.lebourse@sfr.fr>
+Signed-off-By: Francis Le Bourse <francis.lebourse@sfr.fr>
 ---
  ecm_db/ecm_db.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
