@@ -1,0 +1,267 @@
+From 63c6f924ec345d1262bc5c5e444526b3a57aad33 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 17 Mar 2022 12:23:18 +0100
+Subject: [PATCH] nss-cfi: fix SHA header include in 5.15
+
+SHA header was split into SHA-1 and SHA-2 headers in kernel 5.11, so
+fix the include for newer kernels.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ cryptoapi/v1.0/nss_cryptoapi.c         | 5 +++++
+ cryptoapi/v1.0/nss_cryptoapi_ablk.c    | 5 +++++
+ cryptoapi/v1.0/nss_cryptoapi_aead.c    | 5 +++++
+ cryptoapi/v1.0/nss_cryptoapi_ahash.c   | 5 +++++
+ cryptoapi/v1.0/nss_cryptoapi_debugfs.c | 5 +++++
+ cryptoapi/v1.1/nss_cryptoapi.c         | 5 +++++
+ cryptoapi/v1.1/nss_cryptoapi_ablk.c    | 5 +++++
+ cryptoapi/v1.1/nss_cryptoapi_aead.c    | 5 +++++
+ cryptoapi/v1.1/nss_cryptoapi_debugfs.c | 5 +++++
+ cryptoapi/v2.0/nss_cryptoapi.c         | 5 +++++
+ cryptoapi/v2.0/nss_cryptoapi_ablk.c    | 5 +++++
+ cryptoapi/v2.0/nss_cryptoapi_aead.c    | 5 +++++
+ cryptoapi/v2.0/nss_cryptoapi_ahash.c   | 5 +++++
+ ocf/v2.0/nss_cfi_ocf.c                 | 5 +++++
+ 14 files changed, 70 insertions(+)
+
+diff --git a/cryptoapi/v1.0/nss_cryptoapi.c b/cryptoapi/v1.0/nss_cryptoapi.c
+index dff139d..354af6d 100644
+--- a/cryptoapi/v1.0/nss_cryptoapi.c
++++ b/cryptoapi/v1.0/nss_cryptoapi.c
+@@ -38,7 +38,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v1.0/nss_cryptoapi_ablk.c b/cryptoapi/v1.0/nss_cryptoapi_ablk.c
+index 09b3688..617f7b6 100644
+--- a/cryptoapi/v1.0/nss_cryptoapi_ablk.c
++++ b/cryptoapi/v1.0/nss_cryptoapi_ablk.c
+@@ -37,7 +37,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v1.0/nss_cryptoapi_aead.c b/cryptoapi/v1.0/nss_cryptoapi_aead.c
+index 88925b1..366b39d 100644
+--- a/cryptoapi/v1.0/nss_cryptoapi_aead.c
++++ b/cryptoapi/v1.0/nss_cryptoapi_aead.c
+@@ -38,7 +38,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v1.0/nss_cryptoapi_ahash.c b/cryptoapi/v1.0/nss_cryptoapi_ahash.c
+index 836a567..bfa30fb 100644
+--- a/cryptoapi/v1.0/nss_cryptoapi_ahash.c
++++ b/cryptoapi/v1.0/nss_cryptoapi_ahash.c
+@@ -35,7 +35,12 @@
+ #include <linux/debugfs.h>
+ 
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/scatterwalk.h>
+diff --git a/cryptoapi/v1.0/nss_cryptoapi_debugfs.c b/cryptoapi/v1.0/nss_cryptoapi_debugfs.c
+index 1d17470..c68a6ca 100644
+--- a/cryptoapi/v1.0/nss_cryptoapi_debugfs.c
++++ b/cryptoapi/v1.0/nss_cryptoapi_debugfs.c
+@@ -38,7 +38,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v1.1/nss_cryptoapi.c b/cryptoapi/v1.1/nss_cryptoapi.c
+index d1a7313..64f28ce 100644
+--- a/cryptoapi/v1.1/nss_cryptoapi.c
++++ b/cryptoapi/v1.1/nss_cryptoapi.c
+@@ -38,7 +38,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v1.1/nss_cryptoapi_ablk.c b/cryptoapi/v1.1/nss_cryptoapi_ablk.c
+index a61e279..d712c95 100644
+--- a/cryptoapi/v1.1/nss_cryptoapi_ablk.c
++++ b/cryptoapi/v1.1/nss_cryptoapi_ablk.c
+@@ -36,7 +36,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v1.1/nss_cryptoapi_aead.c b/cryptoapi/v1.1/nss_cryptoapi_aead.c
+index 020d605..dc84e60 100644
+--- a/cryptoapi/v1.1/nss_cryptoapi_aead.c
++++ b/cryptoapi/v1.1/nss_cryptoapi_aead.c
+@@ -38,7 +38,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v1.1/nss_cryptoapi_debugfs.c b/cryptoapi/v1.1/nss_cryptoapi_debugfs.c
+index dff774c..9dafe80 100644
+--- a/cryptoapi/v1.1/nss_cryptoapi_debugfs.c
++++ b/cryptoapi/v1.1/nss_cryptoapi_debugfs.c
+@@ -37,7 +37,12 @@
+ #include <crypto/ctr.h>
+ #include <crypto/des.h>
+ #include <crypto/aes.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v2.0/nss_cryptoapi.c b/cryptoapi/v2.0/nss_cryptoapi.c
+index 23d2afa..2d5860b 100644
+--- a/cryptoapi/v2.0/nss_cryptoapi.c
++++ b/cryptoapi/v2.0/nss_cryptoapi.c
+@@ -38,7 +38,12 @@
+ 
+ #include <crypto/aes.h>
+ #include <crypto/des.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/md5.h>
+ #include <crypto/ghash.h>
+diff --git a/cryptoapi/v2.0/nss_cryptoapi_ablk.c b/cryptoapi/v2.0/nss_cryptoapi_ablk.c
+index 8fc4f89..f67a7c8 100644
+--- a/cryptoapi/v2.0/nss_cryptoapi_ablk.c
++++ b/cryptoapi/v2.0/nss_cryptoapi_ablk.c
+@@ -36,7 +36,12 @@
+ 
+ #include <crypto/aes.h>
+ #include <crypto/des.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v2.0/nss_cryptoapi_aead.c b/cryptoapi/v2.0/nss_cryptoapi_aead.c
+index 9fd1b94..fad2668 100644
+--- a/cryptoapi/v2.0/nss_cryptoapi_aead.c
++++ b/cryptoapi/v2.0/nss_cryptoapi_aead.c
+@@ -38,7 +38,12 @@
+ 
+ #include <crypto/aes.h>
+ #include <crypto/des.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/cryptoapi/v2.0/nss_cryptoapi_ahash.c b/cryptoapi/v2.0/nss_cryptoapi_ahash.c
+index 73fc781..268aa37 100644
+--- a/cryptoapi/v2.0/nss_cryptoapi_ahash.c
++++ b/cryptoapi/v2.0/nss_cryptoapi_ahash.c
+@@ -37,7 +37,12 @@
+ 
+ #include <crypto/aes.h>
+ #include <crypto/des.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/hash.h>
+ #include <crypto/algapi.h>
+ #include <crypto/aead.h>
+diff --git a/ocf/v2.0/nss_cfi_ocf.c b/ocf/v2.0/nss_cfi_ocf.c
+index 08c0e77..7714ecf 100644
+--- a/ocf/v2.0/nss_cfi_ocf.c
++++ b/ocf/v2.0/nss_cfi_ocf.c
+@@ -41,7 +41,12 @@
+ #include <linux/delay.h>
+ #include <crypto/aes.h>
+ #include <crypto/des.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+ #include <crypto/sha.h>
++#else
++#include <crypto/sha1.h>
++#include <crypto/sha2.h>
++#endif
+ #include <crypto/md5.h>
+ #include <cryptodev.h>
+ 
+-- 
+2.35.1
+
